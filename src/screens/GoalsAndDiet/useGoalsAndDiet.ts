@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 
 export type Goal = "lose" | "maintain" | "gain";
 export type Diet = "veg" | "non-veg" | "vegan" | "jain";
@@ -8,6 +9,7 @@ export const useGoalsAndDiet = () => {
   const [goal, setGoal] = useState<Goal>("maintain");
   const [diet, setDiet] = useState<Diet>("non-veg");
   const [activity, setActivity] = useState<ActivityLevel>(1);
+  const navigation = useNavigation<any>();
 
   const handleGoalSelect = (selectedGoal: Goal) => {
     setGoal(selectedGoal);
@@ -23,7 +25,7 @@ export const useGoalsAndDiet = () => {
 
   const handleCalculatePlan = () => {
     console.log("Calculating plan for:", { goal, diet, activity });
-    // Navigation logic would go here
+    navigation.navigate('CalorieReveal');
   };
 
   return {

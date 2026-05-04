@@ -1,15 +1,97 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Platform,
   StyleSheet,
+  Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import Animated, { 
+  useAnimatedStyle, 
+  withTiming, 
+  useSharedValue,
+  interpolateColor,
+  withSpring
+} from "react-native-reanimated";
 import { useGoalsAndDiet, Goal, Diet, ActivityLevel } from "./useGoalsAndDiet";
+
+// Better approach: Separate component for animated Goal cards
+const GoalCard = ({ 
+  item, 
+  isActive, 
+  onPress 
+}: { 
+  item: any, 
+  isActive: boolean, 
+  onPress: () => void 
+}) => {
+  const progress = useSharedValue(isActive ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withSpring(isActive ? 1 : 0, { damping: 15 });
+  }, [isActive]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: interpolateColor(
+        progress.value,
+        [0, 1],
+        ["#ffffff", "#6dfe9c"] // surface-container-lowest to primary-container
+      ),
+      transform: [{ scale: withSpring(isActive ? 1.02 : 1) }],
+    };
+  });
+
+  const iconAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: interpolateColor(
+        progress.value,
+        [0, 1],
+        ["#eff1f2", "#006a34"] // surface-container-low to primary
+      ),
+    };
+  });
+
+  return (
+    <Pressable onPress={onPress}>
+      <Animated.View
+        style={[
+          styles.cardBase,
+          isActive ? styles.activeShadow : styles.cardShadow,
+          animatedStyle
+        ]}
+        className="flex-row items-center justify-between p-6 rounded-3xl"
+      >
+        <View className="flex-1 gap-y-1">
+          <Text className={`text-xl font-headline font-bold ${
+            isActive ? "text-on-primary-container" : "text-on-surface"
+          }`}>
+            {item.title}
+          </Text>
+          <Text className={`text-sm ${
+            isActive ? "text-on-primary-container/80" : "text-on-surface-variant"
+          }`}>
+            {item.desc}
+          </Text>
+        </View>
+        <Animated.View 
+          style={[styles.iconContainer, iconAnimatedStyle]}
+          className="w-12 h-12 rounded-full items-center justify-center"
+        >
+          <MaterialIcons 
+            name={item.icon as any} 
+            size={24} 
+            color={isActive ? "white" : "#006a34"} 
+          />
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
+  );
+};
 
 export default function GoalsAndDietPage() {
   const {
@@ -92,42 +174,14 @@ export default function GoalsAndDietPage() {
 
           {/* Goal Selection */}
           <View className="gap-y-4">
-            {goals.map((item) => {
-              const isActive = goal === item.id;
-              return (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={() => handleGoalSelect(item.id)}
-                  activeOpacity={0.9}
-                  className={`flex-row items-center justify-between p-6 rounded-3xl transition-all duration-200 ${
-                    isActive ? "bg-primary-container" : "bg-surface-container-lowest"
-                  }`}
-                  style={isActive ? styles.activeShadow : styles.cardShadow}
-                >
-                  <View className="flex-1 gap-y-1">
-                    <Text className={`text-xl font-headline font-bold ${
-                      isActive ? "text-on-primary-container" : "text-on-surface"
-                    }`}>
-                      {item.title}
-                    </Text>
-                    <Text className={`text-sm ${
-                      isActive ? "text-on-primary-container/80" : "text-on-surface-variant"
-                    }`}>
-                      {item.desc}
-                    </Text>
-                  </View>
-                  <View className={`w-12 h-12 rounded-full items-center justify-center ${
-                    isActive ? "bg-primary" : "bg-surface-container-low"
-                  }`}>
-                    <MaterialIcons 
-                      name={item.icon as any} 
-                      size={24} 
-                      color={isActive ? "white" : "#006a34"} 
-                    />
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            {goals.map((item) => (
+              <GoalCard 
+                key={item.id} 
+                item={item} 
+                isActive={goal === item.id} 
+                onPress={() => handleGoalSelect(item.id)} 
+              />
+            ))}
           </View>
 
           {/* Diet Preference */}
@@ -232,6 +286,12 @@ export default function GoalsAndDietPage() {
 }
 
 const styles = StyleSheet.create({
+  cardBase: {
+    backgroundColor: "#ffffff",
+  },
+  iconContainer: {
+    backgroundColor: "#eff1f2",
+  },
   cardShadow: {
     ...Platform.select({
       ios: {

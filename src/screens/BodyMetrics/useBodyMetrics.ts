@@ -6,7 +6,7 @@ export function useBodyMetrics() {
   const [age, setAge] = useState(28);
   const [weight, setWeight] = useState(64.5);
   const [height, setHeight] = useState(168);
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
   const handleGenderSelect = (selectedGender: "male" | "female" | "other") => {
     setGender(selectedGender);
